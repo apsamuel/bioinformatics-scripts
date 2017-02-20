@@ -9,8 +9,10 @@ require 'xml2json'
 
 
 def get_gene_ids(opts)
-	ncbi = Bio::NCBI::REST.new
-	val = ncbi.esearch(opts[:query], { "db"=>"nucleotide", "rettype"=> opts[:format], "retmax"=> opts[:max] })
+	#ncbi = Bio::NCBI::REST.new
+	#Bio::NCBI::REST::ESearch.search("nucleotide", "Homo Sapiens[organism]", 1000), "fasta")
+	val = Bio::NCBI::REST::ESearch.search("nucleotide", opts[:query], opts[:max])
+	#val = ncbi.esearch(opts[:query], { "db"=>"nucleotide", "rettype"=> opts[:format], "retmax"=> opts[:max] })
 	if val.count == 0
 	  puts "No GI's returned for your search, sorry - try again" 
 	  exit 1
@@ -32,7 +34,7 @@ def fetch_data_from_ids(ids,opts)
 		#records = ncbi.efetch(slice, { "db"=>"gene", "rettype" => opts[:format] } )
 		records = Bio::NCBI::REST::EFetch.nucleotide(slice, opts[:format])
 	    records.gsub!("\n\n","\n")
-	    filename = opts[:query].gsub("\W", "")
+	    filename = opts[:query].gsub(" ", "_").gsub("[","_").gsub("]","") + ".#{opts[:format]}"
 	    File.open(filename, 'a')  {|f| f.write(records + "\n") }
 	    #relax for a bit
 	    Kernel.sleep 2
@@ -45,10 +47,44 @@ def fetch_data_from_ids(ids,opts)
 		puts "#{ids.size} genes remaining...."
 		Kernel.sleep 1
 		#records = ncbi.efetch(slice, { "db"=>"gene", "rettype" => opts[:format] } )
-		records = Bio::NCBI::REST::EFetch.nucleotide(slice, opts[:format])
-	    records.gsub!("\n\n","\n")
-	    puts records
-	    Kernel.sleep 2
+		records = Bio::NCBI::REST::EFetch.nucleotide(slice, "xml")
+	    # records.gsub!("\n\n","\n")
+            recordshash = XML2JSON.parse_to_hash(records)
+	    if recordshash['INSDSet'].key?('INSDSeqs')
+              if recordshash['INSDSet']['INSDSeqs'].count > 0
+	        recordshash['INSDSet']['INSDSeqs'].each do |rec|
+	          puts "~" * 100
+	          attrs = {
+	            "definition": "INSDSeq_definition",
+	            "organism": "INSDSeq_organism",
+	            "taxonomy": "INSDSeq_taxonomy",
+	            "locus": "INSDSeq_locus", 
+	            "length": "INSDSeq_length", 
+	            "strandeness": "INSDSeq_strandedness", 
+		    "molecule_type": "INSDSeq_moltype",
+		    "topology": "INSDSeq_topology",
+		    "division": "INSDSeq_division",
+		    "creation_date": "INSDSeq_create-date",
+		    "update_date": "INSDSeq_update-date",	 
+		    "primary_accession": "INSDSeq_primary-accession",
+		    "secondary_accession": "INSDSeq_secondary-accessions"
+                  }
+
+		  #print attributes under each returned seq.
+                  attrs.keys.each do |k|
+		    if rec.key?(attrs[k])
+                      puts "#{k}: #{rec[attrs[k]]}"
+		    end
+		  end
+		end
+
+	      else
+		puts "Something went wrong with the record set.. add more debugging here..."
+		exit 1
+	      end
+	    end
+	    #puts records
+	    #Kernel.sleep 2
 	  end
 	end
 
@@ -65,7 +101,13 @@ OptionParser.new do |opts|
   opts.banner = "Usage: build_fasta.rb [options]"
 
   opts.on("-q", "--query QUERY", "NCBI format search query") do |o|
-    options[:query] = o
+	  if  o !~ /\[.+\]/
+		  puts "You should add an NCBI identifier to stabilize your query. Ex: 'Homo Sapiens[organism]'"
+	    exit 1
+	  else
+            options[:query] = o
+	  end
+
   end
 
   opts.on("-d", "--download", "Downloads genomes as seperate fasta files") do |o|
