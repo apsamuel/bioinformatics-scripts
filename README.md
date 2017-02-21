@@ -24,3 +24,11 @@ Usage: taxonomy_data.rb [options]
 ```
 
 ***
+
+
+
+### To Do List
+* Add asciinema screencast of scripts in action.
+* Add CLI Blast utility
+* Add SNP tracing utility
+* Add homology probing utility
