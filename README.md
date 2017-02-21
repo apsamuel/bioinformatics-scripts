@@ -1,3 +1,4 @@
+![bioinformatics-scripts](http://mkweb.bcgsc.ca/images/masthead/circos-genome-biology-mirna.png)
 # bioinformatics-scripts
 Collection of helper scripts &amp; utilities for biological research/bioinformatics
 
