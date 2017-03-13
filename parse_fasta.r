@@ -15,3 +15,6 @@ genbank_ex_data <- extract_taxonomy(seq,
                                     key = c(gi_no = "obs_id", name = "name", desc = "obs_info"),
                                     database = "ncbi")
 taxon_data(genbank_ex_data)
+
+#not working
+
