@@ -35,7 +35,8 @@ def fetch_data_from_ids(ids,opts)
 		records = Bio::NCBI::REST::EFetch.nucleotide(slice, opts[:format])
 	    records.gsub!("\n\n","\n")
 	    filename = opts[:query].gsub(" ", "_").gsub("[","_").gsub("]","") + ".#{opts[:format]}"
-	    File.open(filename, 'a')  {|f| f.write(records + "\n") }
+	    #File.open(filename, 'a')  {|f| f.write(records + "\n") }
+        File.open(filename, 'a')  {|f| f.write(records) }
 	    #relax for a bit
 	    Kernel.sleep 2
 	  end
